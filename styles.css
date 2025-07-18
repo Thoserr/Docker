@@ -1,0 +1,7 @@
+/* Custom styles for the Cool Landing Page */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Tailwind handles almost everything else. Place additional overrides here. */
