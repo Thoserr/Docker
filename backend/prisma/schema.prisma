@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userInfo         UserInfo?
+  uploaderProfile  UploaderProfile?
+  sheets           Sheet[]
+  orders           Order[]
+
+  @@map("users")
+}
+
+model UserInfo {
+  id       String @id @default(cuid())
+  userId   String @unique
+  fullName String
+  phone    String?
+  avatar   String?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_infos")
+}
+
+model UploaderProfile {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  penName       String
+  faculty       String
+  major         String
+  year          String
+  phoneNumber   String
+  bankAccount   String
+  isApproved    Boolean @default(false)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("uploader_profiles")
+}
+
+model Sheet {
+  id              String      @id @default(cuid())
+  uploaderId      String
+  subjectName     String
+  subjectCode     String
+  faculty         String
+  major           String
+  term            String
+  section         String
+  shortDesc       String
+  longDesc        String?     @db.Text
+  price           Decimal     @default(0.00) @db.Decimal(10, 2)
+  pdfUrl          String
+  previewImages   String?     @db.Text // JSON array of image URLs
+  status          SheetStatus @default(PENDING)
+  downloadCount   Int         @default(0)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  uploader User    @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  orders   Order[]
+
+  @@map("sheets")
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  sheetId       String
+  amount        Decimal     @db.Decimal(10, 2)
+  status        OrderStatus @default(PENDING)
+  paymentSlipUrl String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheet  Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sheetId]) // Prevent duplicate orders for same sheet
+  @@map("orders")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SheetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
